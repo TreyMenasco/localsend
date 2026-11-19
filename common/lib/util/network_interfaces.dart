@@ -43,11 +43,17 @@ bool isNetworkIgnoredRaw({
   );
 }
 
+/// Checks an IP filter before saving it. An empty string is an editable placeholder.
+bool isValidIpFilter(String value) {
+  return value.isEmpty || value == '*' || InternetAddress.tryParse(value.replaceAll('*', '1')) != null;
+}
+
 /// Builds a regular expression from the given IP.
 /// - '123.123.124.*' -> '^123\.123\.124\.[^.]+$'
 /// - '1::1:*:3' -> '^1::1:[^.]+:3$'
 RegExp buildRegExpFromIpFilter(String ip) {
-  return RegExp('^${ip.replaceAll('.', '\\.').replaceAll('*', '[^.]+')}\$');
+  final pattern = ip.split('*').map(RegExp.escape).join('[^.]+');
+  return RegExp('^$pattern\$');
 }
 
 /// Returns true if the given IP should be ignored.

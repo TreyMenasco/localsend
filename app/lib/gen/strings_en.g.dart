@@ -187,6 +187,7 @@ class TranslationsNetworkInterfacesPageEn {
   String get preview => 'Preview';
   String get whitelist => 'Whitelist';
   String get blacklist => 'Blacklist';
+  String get invalidFilter => 'Enter an IP address or a wildcard pattern like 192.168.1.*.';
 }
 
 // Path: receiveHistoryPage

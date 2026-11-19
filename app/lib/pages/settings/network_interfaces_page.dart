@@ -20,6 +20,7 @@ class NetworkInterfacesPage extends StatefulWidget {
 
 class _NetworkInterfacesPageState extends State<NetworkInterfacesPage> {
   List<(String, List<String>)> rawInterfaces = [];
+  final Map<int, String> _filterDrafts = {};
 
   @override
   void initState() {
@@ -120,6 +121,7 @@ class _NetworkInterfacesPageState extends State<NetworkInterfacesPage> {
                   label: t.networkInterfacesPage.whitelist,
                   value: settings.networkWhitelist != null,
                   onChanged: (value) async {
+                    setState(_filterDrafts.clear);
                     if (value == false) {
                       await context.notifier(settingsProvider).setNetworkWhitelist(null);
                     } else {
@@ -137,6 +139,7 @@ class _NetworkInterfacesPageState extends State<NetworkInterfacesPage> {
                   label: t.networkInterfacesPage.blacklist,
                   value: settings.networkBlacklist != null,
                   onChanged: (value) async {
+                    setState(_filterDrafts.clear);
                     if (value == false) {
                       await context.notifier(settingsProvider).setNetworkBlacklist(null);
                     } else {
@@ -157,8 +160,12 @@ class _NetworkInterfacesPageState extends State<NetworkInterfacesPage> {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: StringField(
-                    value: e,
+                    value: _filterDrafts[i] ?? e,
                     onChanged: (value) async {
+                      setState(() => _filterDrafts[i] = value);
+                      if (!isValidIpFilter(value)) {
+                        return;
+                      }
                       await updateFunction([
                         ...currList.sublist(0, i),
                         value,
@@ -167,9 +174,19 @@ class _NetworkInterfacesPageState extends State<NetworkInterfacesPage> {
                     },
                     builder: (context, controller) {
                       return TextFieldTv(
-                        name: t.networkInterfacesPage.whitelist,
+                        name: settings.networkWhitelist != null ? t.networkInterfacesPage.whitelist : t.networkInterfacesPage.blacklist,
                         controller: controller,
+                        validator: (value) => isValidIpFilter(value ?? '') ? null : t.networkInterfacesPage.invalidFilter,
                         onDelete: () async {
+                          final remainingDrafts = {
+                            for (final entry in _filterDrafts.entries)
+                              if (entry.key != i) (entry.key > i ? entry.key - 1 : entry.key): entry.value,
+                          };
+                          setState(() {
+                            _filterDrafts
+                              ..clear()
+                              ..addAll(remainingDrafts);
+                          });
                           if (currList.length == 1) {
                             await updateFunction(null);
                             return;
